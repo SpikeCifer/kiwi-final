@@ -6,6 +6,9 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include "../engine/db.h"
+#include "../engine/variant.h"
+
 #define KSIZE (16)
 #define VSIZE (1000)
 
@@ -14,3 +17,5 @@
 
 long long get_ustime_sec(void);
 void _random_key(char *key,int length);
+void _write_test(DB* db, long int count, int r);
+void _read_test(DB* db, long int count, int r);

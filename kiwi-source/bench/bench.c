@@ -1,4 +1,5 @@
 #include "bench.h"
+#define DATAS ("testdb")
 
 void _random_key(char *key,int length) {
 	int i;
@@ -77,7 +78,9 @@ int main(int argc,char** argv)
 		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
 		exit(1);
 	}
-	
+    // Open the DB here so that it's common to all threads
+	DB* db = db_open(DATAS);
+
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
@@ -86,7 +89,7 @@ int main(int argc,char** argv)
 		_print_environment();
 		if (argc == 4)
 			r = 1;
-		_write_test(count, r);
+		_write_test(db, count, r);
 	} else if (strcmp(argv[1], "read") == 0) {
 		int r = 0;
 
@@ -96,7 +99,9 @@ int main(int argc,char** argv)
 		if (argc == 4)
 			r = 1;
 		
-		_read_test(count, r);
+		_read_test(db, count, r);
+    } else if (strcmp(argv[1], "mix") == 0) {
+        printf("Mix mode has not been implemented yet!\n");
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 		exit(1);

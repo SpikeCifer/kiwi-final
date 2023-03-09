@@ -1,17 +1,17 @@
 #include <string.h>
-#include "../engine/db.h"
-#include "../engine/variant.h"
 #include "bench.h"
 
 #define DATAS ("testdb")
 
-void _write_test(long int count, int r)
+void execute(int argc, char** argv) {
+}
+
+void _write_test(DB* db, long int count, int r)
 {
 	int i;
 	double cost;
 	long long start,end;
 	Variant sk, sv;
-	DB* db;
 
 	char key[KSIZE + 1];
 	char val[VSIZE + 1];
@@ -21,7 +21,6 @@ void _write_test(long int count, int r)
 	memset(val, 0, VSIZE + 1);
 	memset(sbuf, 0, 1024);
 
-	db = db_open(DATAS);
 
 	start = get_ustime_sec();
 	for (i = 0; i < count; i++) {
@@ -59,7 +58,7 @@ void _write_test(long int count, int r)
 		,cost);	
 }
 
-void _read_test(long int count, int r)
+void _read_test(DB* db, long int count, int r)
 {
 	int i;
 	int ret;
@@ -68,10 +67,8 @@ void _read_test(long int count, int r)
 	long long start,end;
 	Variant sk;
 	Variant sv;
-	DB* db;
 	char key[KSIZE + 1];
 
-	db = db_open(DATAS);
 	start = get_ustime_sec();
 	for (i = 0; i < count; i++) {
 		memset(key, 0, KSIZE + 1);
