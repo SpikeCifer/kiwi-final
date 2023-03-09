@@ -80,7 +80,6 @@ int main(int argc,char** argv)
 	}
     // Open the DB here so that it's common to all threads
 	DB* db = db_open(DATAS);
-
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
@@ -105,7 +104,6 @@ int main(int argc,char** argv)
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 	}
-	db_close(db);
-
+	db_close(db);// No matter the result, close the DB
 	return 1;
 }

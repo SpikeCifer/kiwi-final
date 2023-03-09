@@ -3,15 +3,11 @@
 
 #define DATAS ("testdb")
 
-void execute(int argc, char** argv) {
-}
-
 void _write_test(DB* db, long int count, int r)
 {
 	int i;
 	double cost;
 	long long start,end;
-	Variant sk, sv;
 
 	char key[KSIZE + 1];
 	char val[VSIZE + 1];
@@ -21,9 +17,11 @@ void _write_test(DB* db, long int count, int r)
 	memset(val, 0, VSIZE + 1);
 	memset(sbuf, 0, 1024);
 
-
 	start = get_ustime_sec();
+
+    // This is the write loop
 	for (i = 0; i < count; i++) {
+	    Variant sk, sv;
 		if (r)
 			_random_key(key, KSIZE);
 		else
@@ -46,7 +44,6 @@ void _write_test(DB* db, long int count, int r)
 		}
 	}
 
-
 	end = get_ustime_sec();
 	cost = end -start;
 
@@ -64,12 +61,14 @@ void _read_test(DB* db, long int count, int r)
 	int found = 0;
 	double cost;
 	long long start,end;
-	Variant sk;
-	Variant sv;
 	char key[KSIZE + 1];
 
 	start = get_ustime_sec();
+
+    // This is the read loop
 	for (i = 0; i < count; i++) {
+        Variant sk;
+        Variant sv;
 		memset(key, 0, KSIZE + 1);
 
 		/* if you want to test random write, use the following */
