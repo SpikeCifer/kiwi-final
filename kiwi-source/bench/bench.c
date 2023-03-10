@@ -72,7 +72,6 @@ void _print_environment()
 int main(int argc,char** argv)
 {
 	long int count;
-	int thread_num;
 
 	srand(time(NULL));
 	if (argc < 3) {
@@ -80,8 +79,6 @@ int main(int argc,char** argv)
 		exit(1);
 	}
 
-    // Open the DB here so that it's common to all threads
-	
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
@@ -90,7 +87,7 @@ int main(int argc,char** argv)
 		_print_environment();
 		if (argc == 4)
 			r = 1;
-		_write_test(count, r);
+		parallelize_write(count, r);
 	} else if (strcmp(argv[1], "read") == 0) {
 		int r = 0;
 
@@ -100,13 +97,12 @@ int main(int argc,char** argv)
 		if (argc == 4)
 			r = 1;
 		
-		_read_test(count, r);
+        linear_read_test(count, r);
     } else if (strcmp(argv[1], "mix") == 0) {
         printf("Mix mode has not been implemented yet!\n");
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 	}
 
-	
 	return 1;
 }

@@ -18,6 +18,7 @@ DB* db_open_ex(const char* basedir, uint64_t cache_size)
     Log* log = log_new(self->sst->basedir);
     self->memtable = memtable_new(log);
 
+    pthread_mutex_init(&self->lock, NULL);
     return self;
 }
 
@@ -41,6 +42,8 @@ void db_close(DB *self)
     log_remove(self->memtable->log, self->memtable->lsn);
     log_free(self->memtable->log);
     memtable_free(self->memtable);
+
+    pthread_mutex_destroy(&self->lock);
     free(self);
 }
 
