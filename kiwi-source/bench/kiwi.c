@@ -2,9 +2,44 @@
 #include "bench.h"
 
 #define DATAS ("testdb")
+#define THREAD_NUM 4
 
-void _write_test(DB* db, long int count, int r)
+void parallelize_write(int count, int r)
 {
+	DB* db = db_open(DATAS);
+
+	int t_load = count / THREAD_NUM;
+	pthread_t t_id[THREAD_NUM];
+	
+	for(int i = 0; i < THREAD_NUM; i++)
+	{
+		t_args thread_args;
+		thread_args.db = db;
+		thread_args.id = i;
+		thread_args.count = t_load;
+
+		//Last thread gets the remaining load
+		if(i == THREAD_NUM-1)
+		{
+			thread_args.count += count % THREAD_NUM; // if count is not devidable by THREAD_NUM some requests are not served. // Leonidas ahh!!
+		}
+
+		pthread_create(&t_id[i], NULL, test_loop, (void*)thread_args);
+	}
+
+	for (int i = 0; i < THREAD_NUM; i++)
+	{
+		pthread_join(&t_id[i], NULL);
+	}
+
+	db_close(db);// No matter the result, close the DB
+}
+
+
+void *_write_test(void* args) 
+{
+	t_args* thread_args = (t_args *) args;
+
 	int i;
 	double cost;
 	long long start,end;
@@ -18,9 +53,10 @@ void _write_test(DB* db, long int count, int r)
 	memset(sbuf, 0, 1024);
 
 	start = get_ustime_sec();
-
+	
     // This is the write loop
-	for (i = 0; i < count; i++) {
+	for (int i = offset; i < offset + thread_args->count; i++)  //TODO to be figured out
+	{
 	    Variant sk, sv;
 		if (r)
 			_random_key(key, KSIZE);
@@ -34,7 +70,7 @@ void _write_test(DB* db, long int count, int r)
 		sv.length = VSIZE;
 		sv.mem = val;
 
-		db_add(db, &sk, &sv);
+		db_add(thread_args->db, &sk, &sv);
 		if ((i % 10000) == 0) {
 			fprintf(stderr,"random write finished %d ops%30s\r", 
 					i, 
@@ -66,7 +102,8 @@ void _read_test(DB* db, long int count, int r)
 	start = get_ustime_sec();
 
     // This is the read loop
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++) 
+	{
         Variant sk;
         Variant sv;
 		memset(key, 0, KSIZE + 1);
