@@ -97,7 +97,7 @@ int main(int argc,char** argv)
 		if (argc == 4)
 			r = 1;
 		
-        linear_read_test(count, r);
+        parallelize_read(count, r);
     } else if (strcmp(argv[1], "mix") == 0) {
         printf("Mix mode has not been implemented yet!\n");
 	} else {

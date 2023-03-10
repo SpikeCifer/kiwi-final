@@ -23,8 +23,6 @@ void _random_key(char *key,int length);
 void* _write_test(void* args);
 void* _read_test(void* args);
 
-void linear_read_test(long int count, int r);
-
 typedef struct t_args {
     DB* db;
     long int offset;     // The start of the requests

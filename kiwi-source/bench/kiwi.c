@@ -157,6 +157,7 @@ void parallelize_read(long int count, int r)
     for(int i = 0; i < THREAD_NUM; i++) {
         void* thread_found;
         pthread_join(threads[i], &thread_found); // Replace with a found which gets summed
+        found += *(long *) thread_found;
     }
     // Run the read procedure here
 	long long end = get_ustime_sec();
@@ -174,7 +175,7 @@ void parallelize_read(long int count, int r)
 void* _read_test(void* args)
 {
     t_args* thread_args = (t_args *) args;
-	int found = 0;
+    long int* found = (long int*)malloc(sizeof(long int));
     int missed = 0;
 	char key[KSIZE + 1];
     Variant sk, sv;
@@ -193,10 +194,9 @@ void* _read_test(void* args)
 		sk.mem = key;
 		if (db_get(thread_args->db, &sk, &sv)) {
 			//db_free_data(sv.mem);
-			found++;
+			(*found)++;
 		} else {
 			INFO("not found key#%s", sk.mem);
-            missed++;
     	}
 
 		if ((i % 10000) == 0) {
@@ -204,6 +204,5 @@ void* _read_test(void* args)
 			fflush(stderr);
 		}
 	}
-    printf("\n\nFound: %d, Missed: %d\n\n", found, missed);
-    pthread_exit((void*) &found);
+    return found;
 }
