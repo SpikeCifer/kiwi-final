@@ -15,21 +15,23 @@ void parallelize_write(long int count, int r)
     DB* db = db_open(DATAS);
 
     long long start = get_ustime_sec();
+    t_args* thread_argument_pointers[THREAD_NUM];
     for(int i = 0; i < THREAD_NUM; i++) {
-        t_args* thread_args_p = (t_args*)malloc(sizeof(t_args));
-        thread_args_p->db = db;
-        thread_args_p->offset = i*threads_load;
-        thread_args_p->load = threads_load;
-        thread_args_p->r = r;
+        thread_argument_pointers[i] = (t_args*)malloc(sizeof(t_args));
+        thread_argument_pointers[i]->db = db;
+        thread_argument_pointers[i]->offset = i*threads_load;
+        thread_argument_pointers[i]->load = threads_load;
+        thread_argument_pointers[i]->r = r;
 
         if (i == THREAD_NUM - 1) {
             // Add the remaining load to the last thread
-            thread_args_p->load += count % THREAD_NUM; 
+            thread_argument_pointers[i]->load += count % THREAD_NUM; 
         }
-        pthread_create(&threads[i], NULL, _write_test, (void*) thread_args_p);
+        pthread_create(&threads[i], NULL, _write_test, (void*) thread_argument_pointers[i]);
     }
     for(int i = 0; i < THREAD_NUM; i++) {
         pthread_join(threads[i], NULL);
+        free(thread_argument_pointers[i]);
     }
     long long end = get_ustime_sec();
     db_close(db);
@@ -86,22 +88,24 @@ void parallelize_read(long int count, int r)
     pthread_t threads[THREAD_NUM];
 
 	long long start = get_ustime_sec();
+    t_args* thread_argument_pointers[THREAD_NUM];
     for(int i = 0; i < THREAD_NUM; i++) {
-        t_args* thread_args_p = (t_args*)malloc(sizeof(t_args));
-        thread_args_p->db = db;
-        thread_args_p->offset = i*threads_load;
-        thread_args_p->load = threads_load;
-        thread_args_p->r = r;
+        thread_argument_pointers[i] = (t_args*)malloc(sizeof(t_args));
+        thread_argument_pointers[i]->db = db;
+        thread_argument_pointers[i]->offset = i*threads_load;
+        thread_argument_pointers[i]->load = threads_load;
+        thread_argument_pointers[i]->r = r;
 
         if(i == THREAD_NUM - 1) {
-            thread_args_p->load += count % THREAD_NUM;
+            thread_argument_pointers[i]->load += count % THREAD_NUM;
         }
-        pthread_create(&threads[i], NULL, _read_test, (void*) thread_args_p);
+        pthread_create(&threads[i], NULL, _read_test, (void*) thread_argument_pointers[i]);
     }
     for(int i = 0; i < THREAD_NUM; i++) {
         void* thread_found;
         pthread_join(threads[i], &thread_found); // Replace with a found which gets summed
         found += *(long *) thread_found;
+        free(thread_argument_pointers[i]);
     }
     // Run the read procedure here
 	long long end = get_ustime_sec();

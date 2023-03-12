@@ -1,4 +1,4 @@
-requests=1000000
+requests=100000
 make all
 cd bench
 ./kiwi-bench write $requests 
