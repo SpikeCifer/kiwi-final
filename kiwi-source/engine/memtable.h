@@ -14,6 +14,7 @@ typedef struct _memtable {
     uint32_t needs_compaction;
     uint32_t del_count;
     uint32_t add_count;
+    pthread_mutex_t lock;
 } MemTable;
 
 MemTable* memtable_new(Log* log);
