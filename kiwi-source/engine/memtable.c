@@ -80,7 +80,8 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
     node_key += vlen;
     memcpy(node_key, value->mem, value->length);
 
-    // Sync with needs compactions
+    // Sync with needs_compactions
+    // If compaction is not occuring, writers might be able to sync in smaller area
     pthread_mutex_lock(&self->lock);
     self->needs_compaction = log_append(self->log, mem, encoded_len);
 

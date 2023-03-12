@@ -78,60 +78,6 @@ void* _write_test(void* args)
     return NULL;
 }
 
-void linear_read_test(long int count, int r) {
-    int i;
-	int ret;
-	int found = 0;
-	double cost;
-	long long start,end;
-	Variant sk;
-	Variant sv;
-	DB* db;
-	char key[KSIZE + 1];
-
-	db = db_open(DATAS);
-	start = get_ustime_sec();
-	for (i = 0; i < count; i++) {
-		memset(key, 0, KSIZE + 1);
-
-		/* if you want to test random write, use the following */
-		if (r)
-			_random_key(key, KSIZE);
-		else
-			snprintf(key, KSIZE, "key-%d", i);
-		fprintf(stderr, "%d searching %s\n", i, key);
-		sk.length = KSIZE;
-		sk.mem = key;
-		ret = db_get(db, &sk, &sv);
-		if (ret) {
-			//db_free_data(sv.mem);
-			found++;
-		} else {
-			INFO("not found key#%s", 
-					sk.mem);
-    	}
-
-		if ((i % 10000) == 0) {
-			fprintf(stderr,"random read finished %d ops%30s\r", 
-					i, 
-					"");
-
-			fflush(stderr);
-		}
-	}
-
-	db_close(db);
-
-	end = get_ustime_sec();
-	cost = end - start;
-	printf(LINE);
-	printf("|Random-Read	(done:%ld, found:%d): %.6f sec/op; %.1f reads /sec(estimated); cost:%.3f(sec)\n",
-		count, found,
-		(double)(cost / count),
-		(double)(count / cost),
-		cost);
-}
-
 void parallelize_read(long int count, int r)
 {
     long int threads_load = count/THREAD_NUM;
