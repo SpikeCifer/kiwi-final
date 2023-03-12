@@ -49,6 +49,7 @@ void db_close(DB *self)
 
 int db_add(DB* self, Variant* key, Variant* value)
 {
+    pthread_mutex_lock(&self->lock);
     if (memtable_needs_compaction(self->memtable))
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
@@ -56,8 +57,9 @@ int db_add(DB* self, Variant* key, Variant* value)
         sst_merge(self->sst, self->memtable);
         memtable_reset(self->memtable);
     }
-
-    return memtable_add(self->memtable, key, value);
+    int ret_value = memtable_add(self->memtable, key, value);
+    pthread_mutex_unlock(&self->lock);
+    return ret_value;
 }
 
 int db_get(DB* self, Variant* key, Variant* value)

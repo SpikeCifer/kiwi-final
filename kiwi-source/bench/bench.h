@@ -25,7 +25,7 @@ void* _read_test(void* args);
 
 typedef struct t_args {
     DB* db;
-    long int offset;     // The start of the requests
-    long int load; // The load of the thread
+    long int offset;// The start of the requests
+    long int load;  // The load of the thread
     int r;          // If we use random keys
 }t_args;

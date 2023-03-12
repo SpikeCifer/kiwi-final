@@ -72,7 +72,6 @@ void _print_environment()
 int main(int argc,char** argv)
 {
 	long int count;
-
 	srand(time(NULL));
 	if (argc < 3) {
 		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");

@@ -69,9 +69,7 @@ void* _write_test(void* args)
 		sv.length = VSIZE;
 		sv.mem = val;
 
-        pthread_mutex_lock(&thread_args->db->lock);
 		db_add(thread_args->db, &sk, &sv);
-        pthread_mutex_unlock(&thread_args->db->lock);
 		if ((i % 10000) == 0) {
 			fprintf(stderr,"random write finished %d ops%30s\r", i, "");
 			fflush(stderr);
@@ -176,7 +174,6 @@ void* _read_test(void* args)
 {
     t_args* thread_args = (t_args *) args;
     long int* found = (long int*)malloc(sizeof(long int));
-    int missed = 0;
 	char key[KSIZE + 1];
     Variant sk, sv;
 
