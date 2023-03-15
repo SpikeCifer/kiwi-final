@@ -98,6 +98,14 @@ int main(int argc,char** argv)
 		
         parallelize_read(count, r);
     } else if (strcmp(argv[1], "mix") == 0) {
+		int r = 0;
+
+		count = atoi(argv[2]);
+		_print_header(count);
+		_print_environment();
+
+		parallelize_read_write(count, r);
+
         printf("Mix mode has not been implemented yet!\n");
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");

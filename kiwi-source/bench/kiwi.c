@@ -5,6 +5,74 @@
 #define DATAS ("testdb")
 #define THREAD_NUM 10
 
+int top_limit = THREAD_NUM;
+int bottom_limit = 1;
+
+int generateThreadType(int x, int y)
+{
+	srand(time(NULL));
+
+	return rand() % (y - x + 1) + x;
+}
+
+void parallelize_read_write(long int count, int r)
+{
+	long int threads_load = count/THREAD_NUM; // what happens if count < TH_N?
+	pthread_t threads[THREAD_NUM];
+    DB* db = db_open(DATAS);
+
+    long long start = get_ustime_sec();
+    t_args* thread_argument_pointers[THREAD_NUM];
+
+	int writer_id = 0;
+	int reader_id = 0;
+	for (int i = 0; i < THREAD_NUM; i++)
+	{
+		thread_argument_pointers[i] = (t_args*)malloc(sizeof(t_args));
+        thread_argument_pointers[i]->db = db;
+        thread_argument_pointers[i]->load = threads_load;
+        thread_argument_pointers[i]->r = r;
+
+		if (i == THREAD_NUM - 1) {
+            // Add the remaining load to the last thread
+            thread_argument_pointers[i]->load += count % THREAD_NUM; 
+        }
+
+		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2) // Right now we split the requests 50/50. So for 10 Threads we have 5 readers and 5 writers and 
+		{
+			thread_argument_pointers[i]->offset = writer_id*threads_load;
+			pthread_create(&threads[i], NULL, _write_test, (void*) thread_argument_pointers[i]);
+			
+			bottom_limit++;
+			writer_id++;
+		}
+		else
+		{
+			thread_argument_pointers[i]->offset = reader_id*threads_load;
+			pthread_create(&threads[i], NULL, _read_test, (void*) thread_argument_pointers[i]);
+			
+			top_limit--;
+			reader_id++;
+		}
+	}
+
+	for(int i = 0; i < THREAD_NUM; i++) {
+        pthread_join(threads[i], NULL);
+        free(thread_argument_pointers[i]);
+    }
+    long long end = get_ustime_sec();
+    db_close(db);
+
+    double cost = end - start;
+	printf(LINE);
+	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+		,count, (double)(cost / count)
+		,(double)(count / cost)
+		,cost);	
+
+
+}
+
 // Prepares the writer threads
 // count - The number of requests
 // r - True/False use random key

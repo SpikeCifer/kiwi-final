@@ -1,7 +1,7 @@
-requests=100000
+requests=10000
 make all
 cd bench
-./kiwi-bench write $requests 
-./kiwi-bench read $requests
+./kiwi-bench mix $requests 
+
 cd ..
 make clean
