@@ -18,6 +18,7 @@
 long long get_ustime_sec(void);
 void parallelize_write(long int count, int r);
 void parallelize_read(long int count, int r);
+void parallelize_read_write(long int count, int r);
 
 void _random_key(char *key,int length);
 void* _write_test(void* args);

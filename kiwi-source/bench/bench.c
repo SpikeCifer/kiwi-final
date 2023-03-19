@@ -105,8 +105,6 @@ int main(int argc,char** argv)
 		_print_environment();
 
 		parallelize_read_write(count, r);
-
-        printf("Mix mode has not been implemented yet!\n");
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 	}
