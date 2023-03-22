@@ -3,7 +3,7 @@
 #include "bench.h"
 
 #define DATAS ("testdb")
-#define THREAD_NUM 10
+#define THREAD_NUM 4
 
 int top_limit = THREAD_NUM;
 int bottom_limit = 1;
@@ -38,7 +38,7 @@ void parallelize_read_write(long int count, int r)
             thread_argument_pointers[i]->load += count % THREAD_NUM; 
         }
 
-		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2) // Right now we split the requests 50/50. So for 10 Threads we have 5 readers and 5 writers and 
+		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2) // Right now we split the requests 50/50. So for 10 Threads we have 5 readers and 5 writers
 		{
 			thread_argument_pointers[i]->offset = writer_id*threads_load;
 			pthread_create(&threads[i], NULL, _write_test, (void*) thread_argument_pointers[i]);
@@ -65,12 +65,10 @@ void parallelize_read_write(long int count, int r)
 
     double cost = end - start;
 	printf(LINE);
-	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+	printf("|Random Read_write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
 		,count, (double)(cost / count)
 		,(double)(count / cost)
 		,cost);	
-
-
 }
 
 // Prepares the writer threads
@@ -93,7 +91,7 @@ void parallelize_write(long int count, int r)
 
         if (i == THREAD_NUM - 1) {
             // Add the remaining load to the last thread
-            thread_argument_pointers[i]->load += count % THREAD_NUM; 
+            thread_argument_pointers[i]->load += count % THREAD_NUM;
         }
         pthread_create(&threads[i], NULL, _write_test, (void*) thread_argument_pointers[i]);
     }

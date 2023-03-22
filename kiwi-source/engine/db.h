@@ -13,6 +13,15 @@ typedef struct _db {
     SST* sst;
     MemTable* memtable;
     pthread_mutex_t lock;
+
+    pthread_cond_t reader_cond;
+    pthread_cond_t write_cond;
+
+    pthread_mutex_t read_write_lock;
+
+    int readers_active;     //# of readers reading
+    int writer_active;      //Basically a boolean. 1 when a writers is writing and 0 when no writer is writing
+    int writers_waiting;    //# of writers waiting
 } DB;
 
 DB* db_open(const char *basedir);

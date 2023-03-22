@@ -654,6 +654,7 @@ int sst_get(SST* self, Variant* key, Variant* value)
 #ifdef BACKGROUND_MERGE
     int ret = 0;
 
+    //This is a critical section for the reader threads. So if we have multiple threads we have to syncronize them with this merge thread.
     pthread_mutex_lock(&self->cv_lock);
     if (self->immutable)
     {

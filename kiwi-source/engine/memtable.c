@@ -82,7 +82,8 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
 
     // Sync with needs_compactions
     // If compaction is not occuring, writers might be able to sync in smaller area
-    pthread_mutex_lock(&self->lock);
+
+    //pthread_mutex_lock(&self->list->w_lock);
     self->needs_compaction = log_append(self->log, mem, encoded_len);
 
     if (skiplist_insert(self->list, key->mem, key->length, opt, mem) == STATUS_OK_DEALLOC)
@@ -92,7 +93,7 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
         self->add_count++;
     else
         self->del_count++;
-    pthread_mutex_unlock(&self->lock);
+    //pthread_mutex_unlock(&self->list->w_lock);
 
 //    DEBUG("memtable_edit: %.*s %.*s opt: %d", key->length, key->mem, value->length, value->mem, opt);
     return 1;

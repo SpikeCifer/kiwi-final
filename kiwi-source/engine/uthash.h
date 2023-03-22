@@ -795,7 +795,7 @@ do {                                                                            
           _src_hh;                                                               \
           _src_hh = _src_hh->hh_next) {                                          \
           _elt = ELMT_FROM_HH((src)->hh_src.tbl, _src_hh);                       \
-          if (cond(_elt)) {                                                      \
+          if (r_cond(_elt)) {                                                      \
             _dst_hh = (UT_hash_handle*)(((char*)_elt) + _dst_hho);               \
             _dst_hh->key = _src_hh->key;                                         \
             _dst_hh->keylen = _src_hh->keylen;                                   \
