@@ -71,7 +71,7 @@ int db_add(DB* self, Variant* key, Variant* value)
     self->writers_waiting--;
     self->writer_active++;
     
-    if (memtable_needs_compaction(self->memtable)) //We need only one writer to check if the memtable needs compaction at a time
+    if (memtable_needs_compaction(self->memtable))
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
              self->memtable->add_count, self->memtable->del_count);

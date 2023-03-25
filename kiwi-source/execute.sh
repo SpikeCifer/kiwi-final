@@ -1,6 +1,6 @@
 #!/bin/bash
-requests=50000
-mode=1
+requests=500000
+mode=2
 make clean
 make all
 cd bench
