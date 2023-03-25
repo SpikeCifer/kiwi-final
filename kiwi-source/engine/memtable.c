@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <string.h>
 #include <assert.h>
 #include "memtable.h"
@@ -86,8 +87,10 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
 
     self->needs_compaction = log_append(self->log, mem, encoded_len);
 
+    pthread_mutex_lock(&self->list->lock);
     if (skiplist_insert(self->list, key->mem, key->length, opt, mem) == STATUS_OK_DEALLOC)
         free(mem);
+    pthread_mutex_unlock(&self->list->lock);
 
     if (opt == ADD)
         self->add_count++;
@@ -112,8 +115,9 @@ int memtable_remove(MemTable* self, const Variant* key)
 
 int memtable_get(SkipList* list, const Variant *key, Variant* value)
 {
-    
+    pthread_mutex_lock(&list->lock);
     SkipNode* node = skiplist_lookup(list, key->mem, key->length);
+    pthread_mutex_unlock(&list->lock);
 
     if (!node)
         return 0;

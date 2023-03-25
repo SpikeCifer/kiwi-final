@@ -1,14 +1,13 @@
 #!/bin/bash
 requests=500000
 mode=2
-make clean
 make all
 cd bench
 
 if [ "$mode" -eq 1 ]
 then
-    time ./kiwi-bench mix $requests 
-    
+    ./kiwi-bench write $requests 
+    gdb --args ./kiwi-bench read $requests 
 else
     gdb --args kiwi-bench mix $requests 
 fi

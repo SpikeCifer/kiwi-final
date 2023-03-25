@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <string.h>
 #include <assert.h>
 #include "db.h"
@@ -17,15 +18,6 @@ DB* db_open_ex(const char* basedir, uint64_t cache_size)
 
     Log* log = log_new(self->sst->basedir);
     self->memtable = memtable_new(log);
-
-    pthread_mutex_init(&self->read_write_lock, NULL);
-    pthread_cond_init(&self->reader_cond, NULL);
-    pthread_cond_init(&self->write_cond, NULL);
-
-    self->readers_active = 0;
-    self->writer_active = 0;      //boolean (1 or 0)
-    self->writers_waiting = 0;
-
     return self;
 }
 
@@ -49,28 +41,14 @@ void db_close(DB *self)
     log_remove(self->memtable->log, self->memtable->lsn);
     log_free(self->memtable->log);
     memtable_free(self->memtable);
-
-    pthread_mutex_destroy(&self->read_write_lock);
-    pthread_cond_destroy(&self->reader_cond);
-    pthread_cond_destroy(&self->write_cond);
-
     free(self);
 }
 
 int db_add(DB* self, Variant* key, Variant* value)
 {
-    // Atomic Transaction
     int ret;
-
-    pthread_mutex_lock(&self->read_write_lock);
-    self->writers_waiting++;
-    while(self->readers_active > 0)
-    {
-        pthread_cond_wait(&self->write_cond, &self->read_write_lock);
-    }
-    self->writers_waiting--;
-    self->writer_active++;
-    
+    // Writers are serialized
+    pthread_mutex_lock(&self->writers_lock);
     if (memtable_needs_compaction(self->memtable))
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
@@ -79,50 +57,15 @@ int db_add(DB* self, Variant* key, Variant* value)
         memtable_reset(self->memtable);
     }
     ret = memtable_add(self->memtable, key, value);
-
-    self->writer_active--;
-
-    if(self->writers_waiting > 0)
-    {
-        pthread_cond_signal(&self->write_cond);
-    }
-    else
-    {
-        pthread_cond_broadcast(&self->reader_cond);
-    }
-
-    pthread_mutex_unlock(&self->read_write_lock);
+    pthread_mutex_unlock(&self->writers_lock);
     return ret;
 }
 
 int db_get(DB* self, Variant* key, Variant* value)
 {
-    int res = 0;
-
-    pthread_mutex_lock(&self->read_write_lock);
-    while(self->writers_waiting > 0 || self->writer_active > 0) // Readers wait while there are active or waiting writers
-    {
-        pthread_cond_wait(&self->reader_cond, &self->read_write_lock);
-    }
-    
-    self->readers_active++;
-    pthread_mutex_unlock(&self->read_write_lock);
-        
     if (memtable_get(self->memtable->list, key, value) == 1)
-        res = 1;
-    else
-        res = sst_get(self->sst, key, value);
-
-    pthread_mutex_lock(&self->read_write_lock);
-    self->readers_active--;
-
-    if (self->readers_active == 0)
-    {
-        pthread_cond_signal(&self->write_cond);
-    }
-    pthread_mutex_unlock(&self->read_write_lock);
-
-    return res;
+        return 1;
+    return sst_get(self->sst, key, value);
 }
 
 int db_remove(DB* self, Variant* key)

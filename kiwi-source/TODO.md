@@ -4,6 +4,7 @@
 - [ ] Implement mix function
 - [ ] Perhaps by creating a higher order lock, we might be able to prevent the 
 deadlock 
+- [ ] Implement reader/writer algorithm in memtable
 
 For Example:
 acquire compaction_lock, acquire cv_lock, acquire lock and
