@@ -12,7 +12,6 @@ typedef struct _db {
     char basedir[MAX_FILENAME+1];
     SST* sst;
     MemTable* memtable;
-    pthread_mutex_t lock;
 
     pthread_cond_t reader_cond;
     pthread_cond_t write_cond;

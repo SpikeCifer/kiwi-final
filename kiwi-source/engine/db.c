@@ -23,7 +23,7 @@ DB* db_open_ex(const char* basedir, uint64_t cache_size)
     pthread_cond_init(&self->write_cond, NULL);
 
     self->readers_active = 0;
-    self->writer_active = 0;      //boolean
+    self->writer_active = 0;      //boolean (1 or 0)
     self->writers_waiting = 0;
 
     return self;
@@ -50,7 +50,7 @@ void db_close(DB *self)
     log_free(self->memtable->log);
     memtable_free(self->memtable);
 
-    pthread_mutex_destroy(&self->lock);
+    pthread_mutex_destroy(&self->read_write_lock);
     pthread_cond_destroy(&self->reader_cond);
     pthread_cond_destroy(&self->write_cond);
 
@@ -71,7 +71,7 @@ int db_add(DB* self, Variant* key, Variant* value)
     self->writers_waiting--;
     self->writer_active++;
     
-    if (memtable_needs_compaction(self->memtable)) //We need only one writer to check if the memtable need compaction at a time
+    if (memtable_needs_compaction(self->memtable)) //We need only one writer to check if the memtable needs compaction at a time
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
              self->memtable->add_count, self->memtable->del_count);

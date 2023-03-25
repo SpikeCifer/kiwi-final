@@ -55,7 +55,8 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
     // an encoded string that encompasses both the key and value supplied
     // by the user.
     //
-
+    
+    
     size_t klen = varint_length(key->length);          // key length
     size_t vlen = (opt == DEL) ? 1 : varint_length(value->length + 1);    // value length - 0 is reserved for tombstone
     size_t encoded_len = klen + vlen + key->length + value->length;
@@ -83,7 +84,6 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
     // Sync with needs_compactions
     // If compaction is not occuring, writers might be able to sync in smaller area
 
-    //pthread_mutex_lock(&self->list->w_lock);
     self->needs_compaction = log_append(self->log, mem, encoded_len);
 
     if (skiplist_insert(self->list, key->mem, key->length, opt, mem) == STATUS_OK_DEALLOC)
@@ -93,8 +93,7 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
         self->add_count++;
     else
         self->del_count++;
-    //pthread_mutex_unlock(&self->list->w_lock);
-
+    
 //    DEBUG("memtable_edit: %.*s %.*s opt: %d", key->length, key->mem, value->length, value->mem, opt);
     return 1;
 }
@@ -113,6 +112,7 @@ int memtable_remove(MemTable* self, const Variant* key)
 
 int memtable_get(SkipList* list, const Variant *key, Variant* value)
 {
+    
     SkipNode* node = skiplist_lookup(list, key->mem, key->length);
 
     if (!node)
