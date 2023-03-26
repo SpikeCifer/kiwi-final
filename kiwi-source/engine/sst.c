@@ -1,3 +1,4 @@
+#include <pthread.h>
 #define _BSD_SOURCE
 #include <stdio.h>
 #include <unistd.h>
@@ -118,10 +119,8 @@ static void _schedule_compaction(SST* self)
 #ifndef BACKGROUND_MERGE
         sst_compact(self);
 #else
-        pthread_mutex_lock(&self->cv_lock);
         self->merge_state |= MERGE_STATUS_COMPACT;
         pthread_cond_signal(&self->cv);
-        pthread_mutex_unlock(&self->cv_lock);
 #endif
     }
 }
@@ -204,6 +203,7 @@ static void merge_thread(void* data)
 
         sst->merge_state = 0;
 
+        pthread_cond_broadcast(&sst->cv);
         pthread_mutex_unlock(&sst->cv_lock);
     }
 }
@@ -580,9 +580,7 @@ void sst_merge(SST* self, MemTable* mem)
 
     while (self->merge_state != 0)
     {
-        pthread_mutex_unlock(&self->cv_lock);
-        usleep(1000);
-        pthread_mutex_lock(&self->cv_lock);
+        pthread_cond_wait(&self->cv, &self->cv_lock);
     }
 
     // We need to get a reference to the skiplist and to the logfile
@@ -654,17 +652,23 @@ int sst_get(SST* self, Variant* key, Variant* value)
 #ifdef BACKGROUND_MERGE
     int ret = 0;
 
-    //This is a critical section for the reader threads. So if we have multiple threads we have to syncronize them with this merge thread.
+    //This is a critical section for the reader threads. 
+    //So if we have multiple threads we have to syncronize them with this merge thread.
     pthread_mutex_lock(&self->cv_lock);
     if (self->immutable)
     {
         DEBUG("Serving sst_get request from immutable memtable");
         ret = memtable_get(self->immutable_list, key, value);
     }
-    pthread_mutex_unlock(&self->cv_lock);
 
-    if (ret)
+    if (ret) {
+        pthread_mutex_unlock(&self->cv_lock);
         return ret;
+    }
+
+    while(self->merge_state != 0) {
+        pthread_cond_wait(&self->cv, &self->cv_lock);
+    }
 
     pthread_mutex_lock(&self->lock);
 #endif
@@ -726,6 +730,7 @@ int sst_get(SST* self, Variant* key, Variant* value)
         {
 #ifdef BACKGROUND_MERGE
             pthread_mutex_unlock(&self->lock);
+            pthread_mutex_unlock(&self->cv_lock);
 #endif
 
             return opt == ADD;
@@ -734,6 +739,7 @@ int sst_get(SST* self, Variant* key, Variant* value)
 
 #ifdef BACKGROUND_MERGE
     pthread_mutex_unlock(&self->lock);
+    pthread_mutex_unlock(&self->cv_lock);
 #endif
 
     return 0;
