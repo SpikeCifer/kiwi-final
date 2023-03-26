@@ -3,7 +3,7 @@
 #include "bench.h"
 
 #define DATAS ("testdb")
-#define THREAD_NUM 20
+#define THREAD_NUM 4
 
 int top_limit = THREAD_NUM;
 int bottom_limit = 1;
@@ -26,29 +26,36 @@ void parallelize_read_write(long int count, int r)
 
 	int writer_id = 0;
 	int reader_id = 0;
+    long int write_load = 0, read_load = 0;
 	for (int i = 0; i < THREAD_NUM; i++)
 	{
 		thread_argument_pointers[i] = (t_args*)malloc(sizeof(t_args));
         thread_argument_pointers[i]->db = db;
-        thread_argument_pointers[i]->load = threads_load;
+        thread_argument_pointers[i]->load = threads_load; // general thread load
         thread_argument_pointers[i]->r = r;
 
 		if (i == THREAD_NUM - 1) {
             // Add the remaining load to the last thread
             thread_argument_pointers[i]->load += count % THREAD_NUM; 
         }
+        
+        // Right now we split the requests 50/50. 
+        // So for 10 Threads we have 5 readers and 5 writers
 
-		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2) // Right now we split the requests 50/50. So for 10 Threads we have 5 readers and 5 writers
+        // This block contains writers
+		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2)
 		{
 			thread_argument_pointers[i]->offset = writer_id*threads_load;
+            write_load += thread_argument_pointers[i]->load;
 			pthread_create(&threads[i], NULL, _write_test, (void*) thread_argument_pointers[i]);
 			
 			bottom_limit++;
 			writer_id++;
 		}
-		else
+		else // Readers
 		{
 			thread_argument_pointers[i]->offset = reader_id*threads_load;
+            read_load += thread_argument_pointers[i]->load;
 			pthread_create(&threads[i], NULL, _read_test, (void*) thread_argument_pointers[i]);
 			
 			top_limit--;
@@ -56,8 +63,13 @@ void parallelize_read_write(long int count, int r)
 		}
 	}
 
+    // Gather Results Phase
+    long int found;
 	for(int i = 0; i < THREAD_NUM; i++) {
-        pthread_join(threads[i], NULL);
+        void * thread_found;
+        pthread_join(threads[i], &thread_found); 
+        if (thread_found != NULL)
+            found += *(long *) thread_found;
         free(thread_argument_pointers[i]);
     }
     long long end = get_ustime_sec();
@@ -65,15 +77,16 @@ void parallelize_read_write(long int count, int r)
 
     double cost = end - start;
 	printf(LINE);
-	printf("|Random Read_write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-		,count, (double)(cost / count)
+	printf("|Random Read_write(done:%ld) (writes:%ld) (found:%ld/%ld): %.6f sec/op; "
+            "%.1f operations/sec(estimated); cost:%.3f(sec);\n"
+		,count, write_load, found, read_load, (double)(cost / count)
 		,(double)(count / cost)
 		,cost);	
 }
 
-// Prepares the writer threads
-// count - The number of requests
-// r - True/False use random key
+// Prepares the writer threads.
+// count - The number of requests.
+// r - True/False use random key.
 void parallelize_write(long int count, int r)
 {
     long int threads_load = count/THREAD_NUM; // what happens if count < TH_N?
