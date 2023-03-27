@@ -34,11 +34,13 @@ typedef struct _skiplist {
     pthread_mutex_t lock;
     int refcount;
 
-    pthread_cond_t writter_cond;
+    // Readers-Writers Algorithm on Skiplist
+    pthread_cond_t writer_cond;
     pthread_cond_t reader_cond;
 
     int readers_active;
     int writers_active;
+    int writers_waiting;
 #endif
 
     // the data structure

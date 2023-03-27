@@ -29,10 +29,11 @@ SkipList* skiplist_new(size_t max_count)
 
 #ifdef BACKGROUND_MERGE
     pthread_mutex_init(&self->lock, NULL);
-    pthread_cond_init(&self->writter_cond, NULL);
+    pthread_cond_init(&self->writer_cond, NULL);
     pthread_cond_init(&self->reader_cond, NULL);
     self->readers_active = 0;
     self->writers_active = 0;
+    self->writers_waiting = 0;
     self->refcount = 0;
 #endif
 

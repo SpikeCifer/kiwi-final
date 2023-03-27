@@ -46,9 +46,8 @@ void db_close(DB *self)
 
 int db_add(DB* self, Variant* key, Variant* value)
 {
-    int ret;
-    // Writers are serialized
-    pthread_mutex_lock(&self->writers_lock);
+    // Writers check compaction need in serial fashion
+    pthread_mutex_lock(&self->memtable->compaction_lock);
     if (memtable_needs_compaction(self->memtable))
     {
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
@@ -56,9 +55,8 @@ int db_add(DB* self, Variant* key, Variant* value)
         sst_merge(self->sst, self->memtable);
         memtable_reset(self->memtable);
     }
-    ret = memtable_add(self->memtable, key, value);
-    pthread_mutex_unlock(&self->writers_lock);
-    return ret;
+    pthread_mutex_unlock(&self->memtable->compaction_lock);
+    return memtable_add(self->memtable, key, value);
 }
 
 int db_get(DB* self, Variant* key, Variant* value)
