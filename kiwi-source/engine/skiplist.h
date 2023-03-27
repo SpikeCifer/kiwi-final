@@ -29,14 +29,16 @@ typedef struct _skiplist {
     size_t wasted_bytes;     // how many bytes are unallocated and fragments
     size_t allocated;
 
-    pthread_mutex_t w_lock;
-    pthread_mutex_t r_lock;
-    pthread_cond_t wrt_cond;
-    pthread_cond_t r_cond;
 
 #ifdef BACKGROUND_MERGE
     pthread_mutex_t lock;
     int refcount;
+
+    pthread_cond_t writter_cond;
+    pthread_cond_t reader_cond;
+
+    int readers_active;
+    int writers_active;
 #endif
 
     // the data structure

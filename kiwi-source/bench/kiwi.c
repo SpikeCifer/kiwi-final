@@ -3,7 +3,7 @@
 #include "bench.h"
 
 #define DATAS ("testdb")
-#define THREAD_NUM 20
+#define THREAD_NUM 3
 
 int top_limit = THREAD_NUM;
 int bottom_limit = 1;

@@ -26,13 +26,13 @@ SkipList* skiplist_new(size_t max_count)
     self->hdr = arena_alloc(self->arena, SKIPNODE_SIZE + SKIPLIST_MAXLEVEL * sizeof(SkipNode*));
     self->level = 0;
 
-    pthread_mutex_init(&self->w_lock, NULL); // Initialize the new lock
-    pthread_mutex_init(&self->r_lock, NULL); // Initialize the new lock
-    pthread_cond_init(&self->r_cond, NULL);    // Initialize the new condition variables for the readers and writers
-    pthread_cond_init(&self->wrt_cond, NULL);
 
 #ifdef BACKGROUND_MERGE
     pthread_mutex_init(&self->lock, NULL);
+    pthread_cond_init(&self->writter_cond, NULL);
+    pthread_cond_init(&self->reader_cond, NULL);
+    self->readers_active = 0;
+    self->writers_active = 0;
     self->refcount = 0;
 #endif
 

@@ -88,8 +88,16 @@ static int _memtable_edit(MemTable* self, const Variant* key, const Variant* val
     self->needs_compaction = log_append(self->log, mem, encoded_len);
 
     pthread_mutex_lock(&self->list->lock);
+    while (self->list->readers_active > 0)
+        pthread_cond_wait(&self->list->writter_cond, &self->list->lock);
+
+    self->list->writers_active = 1;
+
     if (skiplist_insert(self->list, key->mem, key->length, opt, mem) == STATUS_OK_DEALLOC)
         free(mem);
+
+    self->list->writers_active = 0;
+    pthread_cond_broadcast(&self->list->reader_cond);
     pthread_mutex_unlock(&self->list->lock);
 
     if (opt == ADD)
@@ -116,7 +124,18 @@ int memtable_remove(MemTable* self, const Variant* key)
 int memtable_get(SkipList* list, const Variant *key, Variant* value)
 {
     pthread_mutex_lock(&list->lock);
+    while(list->writers_active > 0)
+        pthread_cond_wait(&list->reader_cond, &list->lock);
+    list->readers_active++;
+    pthread_mutex_unlock(&list->lock);
+
     SkipNode* node = skiplist_lookup(list, key->mem, key->length);
+
+    pthread_mutex_lock(&list->lock);
+    list->readers_active--;
+    if (list->readers_active == 0) {
+        pthread_cond_signal(&list->writter_cond);
+    }
     pthread_mutex_unlock(&list->lock);
 
     if (!node)
