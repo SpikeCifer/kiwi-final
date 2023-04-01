@@ -105,7 +105,7 @@ int main(int argc,char** argv)
 		if(argc == 4)
 			write_percentage = atoi(argv[3]);
 		else
-			write_percentage = 50; // If the user dosn't input a percentage it defaults to 50%
+			write_percentage = 50; // If the user doesn't input a percentage it defaults to 50%
 		
 		_print_header(count);
 		_print_environment();
