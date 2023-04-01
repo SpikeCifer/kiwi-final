@@ -74,7 +74,7 @@ int main(int argc,char** argv)
 	long int count;
 	srand(time(NULL));
 	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | mix> <count>\n");
 		exit(1);
 	}
 
@@ -97,16 +97,22 @@ int main(int argc,char** argv)
 			r = 1;
 		
         parallelize_read(count, r);
-    } else if (strcmp(argv[1], "mix") == 0) {
+    } else if (strcmp(argv[1], "mix") == 0 && argc >= 3 && argc <= 4) {
 		int r = 0;
+		int write_percentage = 0;
 
 		count = atoi(argv[2]);
+		if(argc == 4)
+			write_percentage = atoi(argv[3]);
+		else
+			write_percentage = 50; // If the user dosn't input a percentage it defaults to 50%
+		
 		_print_header(count);
 		_print_environment();
 
-		parallelize_read_write(count, r);
+		parallelize_read_write(count, r, write_percentage);
 	} else {
-		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | mix> <count> <write percentage> <random>\n");
 	}
 
 	return 1;

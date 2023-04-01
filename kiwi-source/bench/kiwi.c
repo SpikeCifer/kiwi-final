@@ -3,7 +3,7 @@
 #include "bench.h"
 
 #define DATAS ("testdb")
-#define THREAD_NUM 3
+#define THREAD_NUM 60
 
 int top_limit = THREAD_NUM;
 int bottom_limit = 1;
@@ -15,18 +15,21 @@ int generateThreadType(int x, int y)
 	return rand() % (y - x + 1) + x;
 }
 
-void parallelize_read_write(long int count, int r)
+void parallelize_read_write(long int count, int r, int write_percentage)
 {
 	long int threads_load = count/THREAD_NUM; // what happens if count < TH_N?
 	pthread_t threads[THREAD_NUM];
-    DB* db = db_open(DATAS);
+    DB* db = db_open(DATAS); // Open the database
 
     long long start = get_ustime_sec();
+
     t_args* thread_argument_pointers[THREAD_NUM];
 
 	int writer_id = 0;
 	int reader_id = 0;
     long int write_load = 0, read_load = 0;
+	int thread_type_threashold = THREAD_NUM * write_percentage / 100; //Calculate the threshold so we can create the desired percentage of writers  
+
 	for (int i = 0; i < THREAD_NUM; i++)
 	{
 		thread_argument_pointers[i] = (t_args*)malloc(sizeof(t_args));
@@ -39,11 +42,8 @@ void parallelize_read_write(long int count, int r)
             thread_argument_pointers[i]->load += count % THREAD_NUM; 
         }
         
-        // Right now we split the requests 50/50. 
-        // So for 10 Threads we have 5 readers and 5 writers
-
         // This block contains writers
-		if(generateThreadType(bottom_limit, top_limit) <= THREAD_NUM/2)
+		if(generateThreadType(bottom_limit, top_limit) <= thread_type_threashold)
 		{
 			thread_argument_pointers[i]->offset = writer_id*threads_load;
             write_load += thread_argument_pointers[i]->load;
@@ -64,7 +64,7 @@ void parallelize_read_write(long int count, int r)
 	}
 
     // Gather Results Phase
-    long int found;
+    long int found = 0;
 	for(int i = 0; i < THREAD_NUM; i++) {
         void * thread_found;
         pthread_join(threads[i], &thread_found); 
@@ -73,7 +73,8 @@ void parallelize_read_write(long int count, int r)
         free(thread_argument_pointers[i]);
     }
     long long end = get_ustime_sec();
-    db_close(db);
+	
+    db_close(db); // Close the database
 
     double cost = end - start;
 	printf(LINE);
@@ -206,6 +207,7 @@ void* _read_test(void* args)
 	char key[KSIZE + 1];
     Variant sk, sv;
 
+	*found = 0; //Initialize it so we make sure it does not get initialized with a random number;
     // This is the read loop
 	for (int i = thread_args->offset; i < thread_args->offset + thread_args->load; i++) 
 	{
@@ -220,7 +222,7 @@ void* _read_test(void* args)
 		sk.mem = key;
 		if (db_get(thread_args->db, &sk, &sv)) {
 			//db_free_data(sv.mem);
-			(*found)++;
+			(*found) += 1;
 		} else {
 			INFO("not found key#%s", sk.mem);
     	}
